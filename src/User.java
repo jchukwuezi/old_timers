@@ -10,21 +10,24 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.struts2.dispatcher.SessionMap;
+import org.apache.struts2.interceptor.SessionAware;
 
 import com.opensymphony.xwork2.ActionSupport;
 
-public class User extends ActionSupport {
+public class User extends ActionSupport implements SessionAware {
 	
+	private List<User> userList = new ArrayList<User>(); 
+	public SessionMap session;
+
 	private String emailAddress;
 	private String name;
-	private List<User> userList = new ArrayList<User>(); 
-	
-	//Taking in the date as a string for now and coming back
-	//private Date birthDate;
-	
 	private String birthDateString;
 	private String password;
 	private String confirmedPassword;
+	
 	private final String INSERT_SQL = "INSERT INTO USERS (email_address, name, birth_date, password) VALUES(?,?,?,?)";
 	private final String SELECT_SQL = "SELECT * FROM USERS WHERE email_address =? AND password =?";
 	private final String FILTER_SQL = "SELECT name, birth_date, email_address FROM USERS WHERE name=? AND birth_date=? AND email_address=?";
@@ -37,6 +40,10 @@ public class User extends ActionSupport {
 		this.name = name;
 		this.birthDateString = DOB;
 		this.emailAddress = email;
+	}
+	
+	public User(String email) {
+		this.emailAddress=email;
 	}
 	
 	//method will attempt to connect to database and write the new users into it
@@ -130,6 +137,7 @@ public class User extends ActionSupport {
 				//if there is a result of the SELECT_SQL query 
 				if(rs.next()) {
 					result = "SUCCESS";
+					addToSession();
 				}
 				else {
 					return result;
@@ -142,48 +150,7 @@ public class User extends ActionSupport {
 			
 		return result;
 	}
-	
-	public String getSystemUsers() {
-		String result = "FAILURE";
 		
-		try {
-			Connection con;
-			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/old_timers?serverTimezone=UTC", "root", "root");
-			
-			//prepared statement to search for user name and password
-			PreparedStatement filterUser = con.prepareStatement(FILTER_SQL);
-			
-			//pass in parameters
-			filterUser.setString(1, name);
-			filterUser.setString(2, birthDateString);
-			filterUser.setString(3, emailAddress);
-			
-			ResultSet rs = filterUser.executeQuery();
-			
-			//if there is a result of the SELECT_SQL query 
-			while(rs.next()) {
-				String userName = rs.getString(1);
-				String userDOB = rs.getString(2);
-				String userEmail = rs.getString(3);
-				
-				//User aUser = new User(userName, userDOB, userEmail);
-				User aUser = new User();
-				aUser.setName(userName);
-				aUser.setBirthDateString(userDOB);
-				aUser.setEmailAddress(userEmail);
-				userList.add(aUser);
-			}
-			result = "SUCCESS";
-				
-		} catch (Exception e) {
-			return result;
-		}
-		
-		return result;
-	}
-	
-	
-	
 	public String getEmailAddress() {
 		return emailAddress;
 	}
@@ -199,16 +166,6 @@ public class User extends ActionSupport {
 	public void setName(String name) {
 		this.name = name;
 	}
-
-	/*
-	public Date getBirthDate() {
-		return convertBirthDate();
-	}
-
-	public void setBirthDate(Date birthDate) {
-		this.birthDate = birthDate;
-	}
-	*/
 
 	public String getPassword() {
 		return password;
@@ -241,38 +198,23 @@ public class User extends ActionSupport {
 	public void setUserList(List<User> userList) {
 		this.userList = userList;
 	}
-	
-	
-	
-	
-	/*
-	public Date convertBirthDate() {
-		Date dateConvert = null;
-		try {
-			dateConvert = new SimpleDateFormat("dd/MM/yyyy").parse(this.birthDateString);
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return dateConvert;
-	}
-	*/
 
-	
-	/*Will try and use this method below to stop myself from connecting to the database everytime I want to do an operation*/
-	/*
-	public Connection createConnection() {
-		Connection con = null;
-		try {
-			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/old_timers?serverTimezone=UTC", "root", "root");
-		} catch (SQLException e) {
-			
-		}
-		
-		return con;
+	@Override
+	public void setSession(Map map) {
+		session = (SessionMap) map;	
 	}
-	*/
+	
+	public String addToSession() {
+		session.put("currentUserEmail", emailAddress);
+		session.put("currentUserPassword", password);
+		return "SUCCESS";
+	}
+	
+	public String getFromSession() {
+		String loggedUserEmail = (String) session.get("currentUserEmail");
+		String loggedUserPassword = (String) session.get("currentUserPassword");
+		return "SUCCESS";
+	}
 	
 		
-	
 }

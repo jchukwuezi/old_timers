@@ -13,6 +13,9 @@ public class FindUser extends ActionSupport {
 	private ArrayList userList = new ArrayList();
 	private final String FILTER_SQL = "SELECT name, birth_date, email_address FROM USERS";
 	
+	public FindUser() {
+		
+	}
 	
 	public ArrayList getUserList() {
 		return userList;
@@ -58,5 +61,5 @@ public class FindUser extends ActionSupport {
 		}
 		
 	}
-	
+
 }
